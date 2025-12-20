@@ -18,6 +18,7 @@ UI_DIR = RESOURCES_DIR / "ui"
 UI_MAIN = UI_DIR / "pdf_main.ui"
 UI_MERGE = UI_DIR / "pdf_merge.ui"
 
-# 資料夾路徑
-DIR_SRC = BASE_DIR / "file_src"
-DIR_DEST = BASE_DIR / "file_dest"
+#--設定來源與目標檔案夾Desktop路徑
+HOME_DIR = Path.home()
+DESKTOP_DIR = HOME_DIR / "Desktop"
+PDF_MERGE_BASE_DIR = DESKTOP_DIR / "pdf_merge"

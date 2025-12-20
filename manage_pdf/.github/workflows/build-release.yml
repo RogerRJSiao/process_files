@@ -1,0 +1,95 @@
+name: Build and Release PDF Manager
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # 當推送版本標籤時觸發
+  workflow_dispatch:  # 允許手動觸發
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install PySide6 pypdf PyMuPDF pyinstaller
+
+    - name: Build executable
+      run: |
+        cd deploy
+        python build_exe.py
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: PDFManager-Windows
+        path: deploy/dist/
+
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libxcb-xinerama0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0
+        python -m pip install --upgrade pip
+        pip install PySide6 pypdf PyMuPDF pyinstaller
+
+    - name: Build executable
+      run: |
+        cd deploy
+        python build_exe.py
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: PDFManager-Linux
+        path: deploy/dist/
+
+  create-release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+    - name: Download Windows build
+      uses: actions/download-artifact@v3
+      with:
+        name: PDFManager-Windows
+        path: releases/windows/
+
+    - name: Download Linux build
+      uses: actions/download-artifact@v3
+      with:
+        name: PDFManager-Linux
+        path: releases/linux/
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          releases/windows/*.exe
+          releases/windows/*.zip
+          releases/linux/*
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

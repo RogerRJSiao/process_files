@@ -12,9 +12,9 @@
 4. **下載合併後的 PDF**：提供按鈕來打開合併後的 A3 PDF 檔案。
    ### 注意事項
 
-   - 支援最多 10 個 PDF 檔案。
-   - 確保輸入的 PDF 是 A4 格式，以正確轉換為 A3。
-   - 合併後的檔案會儲存在 `file_dest/combined_a3.pdf`。
+   - 支援最多 10 個 PDF 檔案，需依序選取檔案。
+   - 確保輸入的 PDF，能合併成單一 A4 格式，並正確轉換為 A3 格式。
+   - 合併及轉換後的檔案，換匯儲存在桌面，並提供使用者指定儲存副本路徑。
 
 
 ## 安裝或擴充 📦
@@ -33,7 +33,7 @@ pip install PySide6 pypdf PyMuPDF
 為提高代碼的可維護性與擴展性，採用 MVC (Model-View-Controller) 架構來建構/重構這個專案
 - View：以 PySide6 (C:\Python313\Lib\site-packages\PySide6\designer.exe) 建立的 .ui 文件，定義用戶介面，並用 QUiLoader 動態載入。雖然 .ui 文件可轉換成 .py，但考慮設計異動頻繁，不建議使用指令轉換成 .py。
 - Controller：主畫面的程式規則在 main_controller.py，根據使用者選單挑出的功能，分流至各別的 xxx_controller.py，負責溝通 View 前端資料渲染、Model 後端資料調用。
-- Model：目前業務規則放在 pdf_combine.py 和 pdf_A4_to_A3.py，負責 PDF 合併、轉換和檔案管理，但仍尚待封裝成 Class、Model。
+- Model：業務規則已封裝在 `src/models/pdf_model.py` 的 `PDFModel` 中，整合 PDF 合併、轉換和檔案管理功能的程式邏輯。
 
 ## 原始碼檔案結構 📂
 
@@ -42,18 +42,18 @@ project/
 ├─ src/                          #--內部資源--#
 │   ├─ main.py                   # 應用程式入口
 │   ├─ controllers/              #--Controller--#
-│   │   ├─ main_controller.py
-|   |   └─ merge_controller.py
+│   │   ├─ main_controller.py     # 主視窗控制器
+│   │   └─ merge_controller.py    # PDF合併控制器
+│   ├─ models/                   #--Model--#
+│   │   └─ pdf_model.py           # PDF業務邏輯封裝
 │   └─ utils/                    #--工具函數--#
-│       └─ paths.py              # 全域路徑定義
+│       └─ paths.py               # 全域路徑定義
 ├─ resources/                    #--外部資源--#
 │   └─ ui/                       #--View--#
-│       ├─ pdf_main.ui           # PDF主視窗UI
-│       └─ pdf_merge.ui          # PDF合併視窗UI
+│       ├─ pdf_main.ui            # PDF主視窗UI
+│       └─ pdf_merge.ui           # PDF合併視窗UI
 ├─ file_src/                     # 暫存輸入檔案的資料夾
 ├─ file_dest/                    # 輸出合併和轉換後檔案的資料夾
-├─ pdf_combine.py                # (todo) model-業務規則-PDF合併邏輯
-├─ pdf_A4_to_A3.py               # (todo) model-業務規則-PDF格式轉換邏輯
 ├─ deploy/                       #--自動化部署--#
 └─ readme.md                     #--專案說明(本文內容)--#
 ```
@@ -66,6 +66,9 @@ project/
 
 3. **理解 Controller 生命週期管理**：在 Python 中，物件可能被垃圾回收器 (GC) 提前清理。將 merge_controller 綁定到 merge_ui 作為實例變數，確保其生命週期與 UI 視窗一致，避免控制器在視窗關閉前被回收，出現類似閃退的不良 UX，維持 GUI 介面上事件處理的穩定性。
 
+4. **選用 PyMuPDF 套件處理 PDF 轉換**：選擇 PyMuPDF (fitz) 而非其他 PDF 處理庫，是因為它能確保，只用單一 PDF 處理套件，可精確控制頁面佈局和轉換。調用 Model 的 `def convert_a4_to_a3` 完成 A4 合併 A3 二合一複雜邏輯時，也同時顧及了頁面尺寸固定、紙張座標方向定義、PDF 渲染解析度維持等。
+
+5. **設計 merge_pdfs 功能限制與驗證**：調用 Model 的 `def merge_pdfs` 時，支援最多 10 個 PDF 原檔案的合併，以及對地端檔案存在驗證、錯誤例外顯示。搭配 QFileDialog.getOpenFileName、getSaveFileName 彈窗介面，實現能任選地端 PDF 檔案，以及指定合併後 A4、A3 下載路徑。
 
 ## 閱讀資源 🔗
 - [[Python 練習筆記] PySide6 做一個簡單的GUI Application](https://medium.com/@benson890720/python%E7%B7%B4%E7%BF%92%E7%AD%86%E8%A8%98-pyside6%E5%81%9A%E4%B8%80%E5%80%8B%E7%B0%A1%E5%96%AE%E7%9A%84gui-application-0-%E7%B0%A1%E4%BB%8B%E8%88%87%E8%A8%AD%E5%AE%9A-96c982d8f90)

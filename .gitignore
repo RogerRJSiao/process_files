@@ -12,6 +12,7 @@ venv/
 .vscode/
 .idea/
 
-# 忽略測試資料
-manage_pdf/file_dest/*
-manage_pdf/file_src/*
+# 忽略部署過程的執行檔
+manage_pdf/deploy/build/*
+manage_pdf/deploy/dist/*
+manage_pdf/deploy/*.zip

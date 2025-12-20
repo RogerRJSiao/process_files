@@ -1,8 +1,10 @@
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QDialogButtonBox
+from models.pdf_model import PDFModel
 
 class MergeController:
     def __init__(self, merge_ui):
         self.merge_ui = merge_ui
+        self.pdf_model = PDFModel()  #--初始化PDF模型
 
         #--連接瀏覽按鈕
         for i in range(1, 11):
@@ -36,5 +38,14 @@ class MergeController:
             QMessageBox.critical(self.merge_ui, "錯誤 ERROR", "請至少選取一個檔案")
             return
 
-        #--執行合併與轉換邏輯 todo            
+        #--調用Model執行合併與轉換規則
+        try:
+            result = self.pdf_model.merge_and_convert(list_files)
+            if result:
+                file_a3_path = self.pdf_model.get_output_path('A3')
+                QMessageBox.information(self.merge_ui, "成功", f"A4合併A3轉換完成! {file_a3_path}")
+            else:
+                QMessageBox.critical(self.merge_ui, "錯誤", "處理不成功")
+        except Exception as e:
+            QMessageBox.critical(self.merge_ui, "錯誤", f"處理失敗: {e}")            
         

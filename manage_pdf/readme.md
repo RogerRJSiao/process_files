@@ -52,11 +52,55 @@ project/
 │   └─ ui/                       #--View--#
 │       ├─ pdf_main.ui            # PDF主視窗UI
 │       └─ pdf_merge.ui           # PDF合併視窗UI
-├─ file_src/                     # 暫存輸入檔案的資料夾
-├─ file_dest/                    # 輸出合併和轉換後檔案的資料夾
 ├─ deploy/                       #--自動化部署--#
+│   ├─ build_exe.py               # PyInstaller打包腳本
+│   ├─ pdf_manager.spec           # PyInstaller配置
+│   ├─ deploy.sh                  # Linux/Mac部署腳本
+│   ├─ dist/                      # 打包輸出目錄
+│   └─ build/                     # PyInstaller臨時文件
+├─ .github/workflows/            #--CI/CD配置--#
+│   └─ build-release.yml          # GitHub Actions工作流
 └─ readme.md                     #--專案說明(本文內容)--#
 ```
+
+## 部署 🚀
+
+### 快速開始
+```bash
+# 1. 安裝依賴模組
+pip install -r requirements.txt
+
+# 2. 打包應用程式
+cd deploy
+python build_exe.py
+
+# 3. 執行產出檔案
+- Windows: .\deploy\dist\PDFManager.exe
+- Linux/Mac: ./deploy/dist/PDFManager
+```
+### 部署選項
+#### Windows 環境 _(請在專案根目錄執行)_
+```bash
+cd deploy 
+python build_exe.py
+```
+#### Linux/Mac 環境 _(請在專案根目錄執行)_ toCheck
+```bash
+chmod +x deploy/deploy.sh
+./deploy/deploy.sh
+```
+#### CI/CD 自動化 _(推送版本標籤，將自動觸發釋出流程)_ toCheck
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+**📦 輸出**: 可執行檔案位於 deploy/dist/*
+- Windows: .exe
+- Linux / macOS: 無副檔名
+
+詳見 [完整部署指南](DEPLOYMENT_README.md)
+
 
 ## 技術新里程 🚀
 
@@ -69,6 +113,8 @@ project/
 4. **選用 PyMuPDF 套件處理 PDF 轉換**：選擇 PyMuPDF (fitz) 而非其他 PDF 處理庫，是因為它能確保，只用單一 PDF 處理套件，可精確控制頁面佈局和轉換。調用 Model 的 `def convert_a4_to_a3` 完成 A4 合併 A3 二合一複雜邏輯時，也同時顧及了頁面尺寸固定、紙張座標方向定義、PDF 渲染解析度維持等。
 
 5. **設計 merge_pdfs 功能限制與驗證**：調用 Model 的 `def merge_pdfs` 時，支援最多 10 個 PDF 原檔案的合併，以及對地端檔案存在驗證、錯誤例外顯示。搭配 QFileDialog.getOpenFileName、getSaveFileName 彈窗介面，實現能任選地端 PDF 檔案，以及指定合併後 A4、A3 下載路徑。
+
+6. **與 GitHub AI Copilot 協作設計 CD 腳本**：這次是首次在個人專案中加入 CD 腳本，嘗試與 Github AI Copilot 協作，加速了開發及學習 CI/CD 的流程設計。在 deploy 檔案夾，建立 `pdf_manager.spec`、`build_exe.py` 等腳本，讓開發者下載本專案後，能快速在本地端 PC 完成部署。
 
 ## 閱讀資源 🔗
 - [[Python 練習筆記] PySide6 做一個簡單的GUI Application](https://medium.com/@benson890720/python%E7%B7%B4%E7%BF%92%E7%AD%86%E8%A8%98-pyside6%E5%81%9A%E4%B8%80%E5%80%8B%E7%B0%A1%E5%96%AE%E7%9A%84gui-application-0-%E7%B0%A1%E4%BB%8B%E8%88%87%E8%A8%AD%E5%AE%9A-96c982d8f90)

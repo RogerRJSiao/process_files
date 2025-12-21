@@ -56,7 +56,7 @@ class MergeController:
             try:
                 #--複製檔案到用戶選擇的位置
                 shutil.copy2(src_a4_path, save_path)
-                shutil.copy2(src_a3_path, save_path.replace('.pdf', '_A3.pdf'))
+                shutil.copy2(src_a3_path, save_path.replace('.pdf', '_to_A3.pdf'))
                 #--顯示成功訊息
                 reply = QMessageBox.question(
                     self.merge_ui,
@@ -87,18 +87,15 @@ class MergeController:
             return
 
         #--調用Model執行合併與轉換規則
-        try:
-            result = self.pdf_model.merge_and_convert(list_files)
-            if result:
-                #--取得輸出A3檔案路徑
-                file_a3_path = self.pdf_model.get_output_path('A3')
-                file_a4_path = self.pdf_model.get_output_path('A4')
-                QMessageBox.information(self.merge_ui, "成功", f"A4合併A3轉換完成!\n{file_a3_path}")
-                #--選擇下載資料夾路徑
-                self.open_save_dialog(file_a3_path, file_a4_path)
+        success, msg = self.pdf_model.merge_and_convert(list_files)
+        if success:
+            #--取得已產出的檔案路徑
+            file_a3_path = self.pdf_model.get_output_path('A3')
+            file_a4_path = self.pdf_model.get_output_path('A4')
+            QMessageBox.information(self.merge_ui, "成功", f"A4合併A3轉換完成!\n{file_a3_path}")
+            #--選擇下載資料夾路徑
+            self.open_save_dialog(file_a3_path, file_a4_path)
 
-            else:
-                QMessageBox.critical(self.merge_ui, "錯誤", "處理不成功")
-        except Exception as e:
-            QMessageBox.critical(self.merge_ui, "錯誤", f"處理失敗: {e}")            
+        else:
+            QMessageBox.critical(self.merge_ui, "錯誤", f"處理不成功: {msg}")            
         

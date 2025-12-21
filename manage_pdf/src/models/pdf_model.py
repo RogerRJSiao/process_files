@@ -22,6 +22,8 @@ class PDFModel:
         #--確保資料夾存在
         os.makedirs(self.src_dir, exist_ok=True)
         os.makedirs(self.dest_dir, exist_ok=True)
+        #--初始化訊息
+        self.errmsg = ""
 
     def merge_pdfs(self, pdf_files):
         """
@@ -29,20 +31,18 @@ class PDFModel:
         Args:
             pdf_files: 要合併的PDF檔案路徑列表
         Returns:
-            output_path: 合併後的PDF檔案路徑(單一A4)
-        Raises:
-            ValueError, FileNotFoundError
+            (output_path, msg): 合併後的A4單一檔案路徑及訊息
         """
         #--檢查是否有檔案可合併
         if not pdf_files:
-            raise ValueError(f"{self.src_dir} 沒有檔案可合併")
+            self.errmsg += "沒有檔案可合併成A4。\n"
+            return None, self.errmsg
         
         #--建立PdfWriter物件來寫入合併的PDF
         writer = PdfWriter()
         for pdf_path in pdf_files:
             if not os.path.exists(pdf_path):
-                # raise FileNotFoundError(f"檔案不存在: {pdf_path}")
-                print(f"檔案不存在: {pdf_path}")
+                print(f"檔案不存在: {pdf_path}")    #--無須中斷，繼續合併其他檔案
                 continue  #--跳過該檔案
             #--讀取PDF並加入至writer
             reader = PdfReader(pdf_path)
@@ -54,7 +54,7 @@ class PDFModel:
         with open(output_path, 'wb') as output_pdf:
             writer.write(output_pdf)
 
-        return output_path
+        return output_path, None
 
     def convert_a4_to_a3(self, input_pdf_path, output_pdf_path=None):
         """
@@ -63,13 +63,12 @@ class PDFModel:
             input_pdf_path: 原始檔案路徑列表
             output_pdf_path: 輸出檔案路徑（可選）
         Returns:
-            output_pdf_path: 輸出檔案路徑
-        Raises:
-            FileNotFoundError, ValueError
+            (output_pdf_path, msg): 輸出檔案路徑及訊息
         """
         #--檢查輸入檔案是否存在
         if not os.path.exists(input_pdf_path):
-            raise FileNotFoundError(f"輸入檔案不存在: {input_pdf_path}")
+            self.errmsg += f"輸入A4檔案不存在: {input_pdf_path}。\n"
+            return None, self.errmsg
 
         if output_pdf_path is None:
             output_pdf_path = os.path.join(self.dest_dir, 'combined_a3.pdf')
@@ -81,7 +80,8 @@ class PDFModel:
         if input_pdf_pages < 2:
             #--低於兩頁無法轉換
             input_pdf.close()
-            raise ValueError("至少需要兩頁A4轉換為一頁A3")
+            self.errmsg += "至少需要兩頁A4轉換為一頁A3。\n"
+            return None, self.errmsg
 
         #--建立新PDF文件
         output_pdf = fitz.open()
@@ -112,7 +112,7 @@ class PDFModel:
         output_pdf.close()
         input_pdf.close()
 
-        return output_pdf_path
+        return output_pdf_path, None
 
     def prepare_files_for_merge(self, ori_files):
         """
@@ -144,25 +144,30 @@ class PDFModel:
         Args:
             file_list: 原始檔案路徑列表
         Returns:
-            True, False: 成功與否
+            (success, msg): 成功與否及訊息
         Raises:
             Exception
         """
+        msg = ""  #--清空訊息
         try:
             #--準備檔案路徑
             prepared_files = self.prepare_files_for_merge(file_list)
-            print(f"準備合併的檔案: {prepared_files}")
+            msg += f"準備合併的檔案: {prepared_files}。\n"
             #--合併成單一A4的PDF
-            merged_a4_path = self.merge_pdfs(prepared_files)
-            print(f"合併後的單一A4檔案: {merged_a4_path}")
+            merged_a4_path, _ = self.merge_pdfs(prepared_files)
+            if not merged_a4_path:
+                return False, self.errmsg
+            msg += f"合併後的單一A4檔案: {merged_a4_path}。\n"
             #--轉換為A3
-            merged_a3_path = self.convert_a4_to_a3(merged_a4_path)
-            print(f"合併後的單一A3檔案: {merged_a3_path}")
-
-            return True
+            merged_a3_path, _ = self.convert_a4_to_a3(merged_a4_path)
+            if not merged_a3_path:
+                return False, self.errmsg
+            msg += f"合併後的單一A3檔案: {merged_a3_path}。\n"
+            return True, msg
+        
         except Exception as e:
-            print(f"合併和轉換過程發生錯誤: {e}")
-            return False
+            self.errmsg += f"合併和轉換過程發生錯誤: {e}\n"
+            return False, self.errmsg
 
     def get_output_path(self, format: str='A3') -> str:
         """

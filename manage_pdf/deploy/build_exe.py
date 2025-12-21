@@ -24,13 +24,13 @@ def clean_build_dirs():
     """清理build和dist目錄"""
     print("清理舊的build和dist目錄...")
     for dir_name in ['build', 'dist']:
-        if os.path.exists(dir_name):
-            shutil.rmtree(dir_name)
+        if os.path.exists(dir_name):    #--檢查目錄是否存在，或用FileNotFoundError
+            shutil.rmtree(dir_name)     #--遞歸刪除目錄，或用PermissionError
             print(f"已刪除 {dir_name} 目錄")
 
 def install_dependencies():
-    """安裝必要的依賴"""
-    print("安裝專案依賴...")
+    """安裝必要的依賴模組"""
+    print("安裝專案的依賴模組...")
     requirements = [
         'PySide6',
         'pypdf',
@@ -43,75 +43,98 @@ def install_dependencies():
         run_command(f"pip install {package}")
 
 def build_exe():
-    """使用PyInstaller打包exe"""
-    print("開始打包exe文件...")
+    """使用PyInstaller打包exe執行檔"""
+    print("開始打包exe執行檔...")
 
-    # 當前已在deploy目錄中，專案根目錄是父目錄
+    #--當前路徑是在deploy目錄內
     project_root = Path(__file__).parent.parent
     deploy_dir = Path(__file__).parent
 
-    # 使用絕對路徑的spec文件進行打包
-    spec_file = deploy_dir / "pdf_manager.spec"
+    #--指定絕對路徑，打包前確認spec文件存在
+    spec_name = "pdf_manager"
+    spec_file = deploy_dir / f"{spec_name}.spec"
     if not spec_file.exists():
         print(f"錯誤: {spec_file} 文件不存在")
-        sys.exit(1)
+        sys.exit(1) #--退出程式
 
-    # 在deploy目錄中運行pyinstaller
+    #--清除舊的build快取，在deploy目錄執行PyInstaller
     cmd = f'pyinstaller --clean "{spec_file}"'
     print(f"執行命令: {cmd}")
     run_command(cmd, cwd=deploy_dir)
 
-    print("exe文件打包完成！")
+    print("執行檔exe打包完成！")
 
 def create_installer():
-    """創建安裝包（可選）"""
-    print("創建安裝包...")
+    """建立安裝檔zip"""
+    print("建立安裝檔zip...")
 
-    # 檢查是否有NSIS或其他安裝包工具
-    dist_dir = Path("dist")
+    #--使用絕對路徑建立安裝檔
+    project_root = Path(__file__).parent.parent
+    deploy_dir = Path(__file__).parent
+    dist_dir = deploy_dir / "dist"
     if dist_dir.exists():
-        # 創建zip包作為簡單的安裝包
+        #--建立zip安裝檔
         import zipfile
-
+        #--檢查並取得已打包成功的exe檔案
         exe_files = list(dist_dir.glob("*.exe"))
         if exe_files:
             zip_name = f"PDFManager_v1.0.0.zip"
             with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 for exe_file in exe_files:
                     zipf.write(exe_file, exe_file.name)
-                # 添加README或其他文件
-                readme = Path("../README.md")
+                #--加入README或其他文件
+                readme = project_root / "README.md"
                 if readme.exists():
                     zipf.write(readme, "README.md")
 
-            print(f"安裝包已創建: {zip_name}")
+            print(f"安裝檔案zip已建立: {zip_name}")
 
 def main():
-    """主函數"""
+    """主函式"""
+    print("=" * 40)
     print("PDF Manager 打包工具")
     print("=" * 40)
 
-    # 確保在deploy目錄中運行
+    project_root = Path(__file__).parent.parent
+    deploy_dir = Path(__file__).parent
+
+    #--確保在deploy目錄中運行，同時檢查spec文件是否存在
     if not os.path.exists("pdf_manager.spec"):
         print("錯誤: 請在deploy目錄中運行此腳本")
-        sys.exit(1)
+        sys.exit(1) #--退出程式
+        
+        #--提示是否重建spec文件
+        # response = input(f"是否要重建 {spec_name}.spec 文件？ (y/n): ")
+        # if response.lower() == 'y':
+        #     main_py = project_root / "src" / "main.py"
+        #     #--產生spec文件(不包含自訂內容，也不會執行打包)
+        #     cmd = f'pyinstaller --name pdf_manager --specpath "{deploy_dir}" --spec-only "{main_py}"'
+        #     print(f"產生spec文件: {cmd}")
+        #     run_command(cmd, cwd=deploy_dir)
+        #     if spec_file.exists():
+        #         print("spec已重建")
+        #     else:
+        #         print("spec重建失敗")
+        #         sys.exit(1)
+        # else:
+        #     sys.exit(1)
 
     try:
-        clean_build_dirs()
-        install_dependencies()
-        build_exe()
-        create_installer()
+        clean_build_dirs()      #--清理build和dist目錄
+        install_dependencies()  #--安裝必要的依賴模組
+        build_exe()             #--使用PyInstaller打包exe
+        create_installer()      #--建立安裝zip檔
+        print("\n打包完成！\n可執行 exe 在 dist/ 目錄")
+        print("-" * 40)
 
-        print("\n打包完成！")
-        print("可執行文件位於 dist/ 目錄中")
-
-        # 顯示文件大小
-        dist_dir = Path("dist")
+        #--檢查並顯示執行檔大小
+        dist_dir = deploy_dir / "dist"
         if dist_dir.exists():
             exe_files = list(dist_dir.glob("*.exe"))
             for exe_file in exe_files:
                 size_mb = exe_file.stat().st_size / (1024 * 1024)
-                print(f"生成的文件: {exe_file.name} ({size_mb:.2f} MB)")
+                print(f"產生檔案: {exe_file.name} ({size_mb:.2f} MB)")
+                print("=" * 40)
     except Exception as e:
         print(f"\n打包失敗: {e}")
         sys.exit(1)

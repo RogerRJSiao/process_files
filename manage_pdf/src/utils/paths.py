@@ -33,7 +33,6 @@ UI_DIR = RESOURCES_DIR / "ui"
 UI_MAIN = UI_DIR / "pdf_main.ui"
 UI_MERGE = UI_DIR / "pdf_merge.ui"
 
-#--設定來源與目標檔案夾Desktop路徑
-HOME_DIR = Path.home()
-DESKTOP_DIR = HOME_DIR / "Desktop"
-PDF_MERGE_BASE_DIR = DESKTOP_DIR / "pdf_merge"
+#--設定來源與目標檔案夾為當前的工作目錄
+WORKING_DIR = Path.cwd()
+PDF_MERGE_BASE_DIR = WORKING_DIR / "pdf_merge"
